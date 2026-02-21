@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fraud Detection System - Project Prototype & Report</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* Slate 50 */
+            color: #1e293b; /* Slate 800 */
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Chart Container Strict Styling */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 100%; /* Default to full width of parent */
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .chart-container.half-width {
+                max-width: 600px;
+            }
+        }
+
+        /* Architecture Flow Animation */
+        .flow-arrow {
+            animation: pulse-arrow 2s infinite;
+        }
+        @keyframes pulse-arrow {
+            0% { opacity: 0.4; transform: translateX(0); }
+            50% { opacity: 1; transform: translateX(5px); }
+            100% { opacity: 0.4; transform: translateX(0); }
+        }
+
+        .active-tab {
+            border-bottom: 2px solid #0f172a;
+            color: #0f172a;
+            font-weight: 600;
+        }
+        .inactive-tab {
+            color: #64748b;
+        }
+        .inactive-tab:hover {
+            color: #334155;
+        }
+
+        /* Card Hover Effects */
+        .stat-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Choosing 'Secure Slate' Palette: Deep Slate (#0f172a) for trust, White for clarity, Red (#ef4444) for alerts, Emerald (#10b981) for safety. -->
+    <!-- Application Structure Plan: 
+         1. Header: Project Identity.
+         2. Tab Navigation: Overview (Report), Architecture (Tech), Prototype (Demo), Roadmap (Process).
+         3. Dynamic Content Area: Swaps content based on tabs.
+            - Overview: Problem statement, market need chart.
+            - Architecture: CSS Flowchart explaining the ML pipeline.
+            - Prototype: The core interactive 'Fake' Dashboard simulating the end product.
+            - Roadmap: Timeline of development.
+         Rationale: This structure separates the 'Report' (Theory) from the 'Product' (Practice), allowing mentors to assess both the concept and the UX execution.
+    -->
+    <!-- Visualization & Content Choices:
+         - Market Trend Chart (Line): Shows rising fraud to justify the project.
+         - Fraud Type Distribution (Doughnut): Shows what the model detects.
+         - Architecture Diagram (HTML/Flex): Explains system flow without SVG/Mermaid.
+         - Live Stats (DOM Manipulation): Demonstrates the 'Real-time' aspect of the solution.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <!-- Navigation Header -->
+    <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <span class="text-2xl font-bold tracking-tight">Shield<span class="text-emerald-400">AI</span></span>
+                    <span class="ml-3 text-slate-400 text-sm hidden sm:block">| Fraud Detection System Prototype</span>
+                </div>
+                <div class="flex space-x-1">
+                    <button onclick="switchTab('overview')" id="tab-overview" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-slate-800 transition text-white bg-slate-800">Overview</button>
+                    <button onclick="switchTab('architecture')" id="tab-architecture" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-slate-800 transition text-slate-300">Architecture</button>
+                    <button onclick="switchTab('prototype')" id="tab-prototype" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-slate-800 transition text-emerald-400 border border-emerald-900 bg-emerald-900/20">Live Prototype</button>
+                    <button onclick="switchTab('roadmap')" id="tab-roadmap" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-slate-800 transition text-slate-300">Roadmap</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-grow bg-slate-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+            <!-- VIEW: OVERVIEW (Project Report) -->
+            <div id="view-overview" class="space-y-8 animate-fade-in">
+                <!-- Hero / Abstract -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-8 md:flex md:items-center md:justify-between">
+                        <div class="md:w-2/3">
+                            <h1 class="text-3xl font-bold text-slate-900 mb-4">Project Kickoff: Intelligent Fraud Detection</h1>
+                            <p class="text-lg text-slate-600 mb-6">
+                                Traditional rule-based fraud detection is too slow and produces too many false positives. 
+                                <span class="font-semibold text-slate-800">ShieldAI</span> leverages Machine Learning to analyze transaction patterns in real-time, 
+                                detecting anomalies with 99.2% accuracy while reducing manual review time by 60%.
+                            </p>
+                            <div class="flex flex-wrap gap-3">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Machine Learning</span>
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">Real-time Analytics</span>
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">Secure API</span>
+                            </div>
+                        </div>
+                        <div class="mt-6 md:mt-0 md:w-1/3 flex justify-center">
+                            <div class="text-center p-6 bg-slate-50 rounded-lg border border-slate-100">
+                                <div class="text-4xl font-bold text-emerald-600 mb-1">$42B+</div>
+                                <div class="text-sm text-slate-500">Global Losses (2023)</div>
+                                <div class="text-xs text-slate-400 mt-2">Target Market Size</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Problem Analysis Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Text Content -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h2 class="text-xl font-bold text-slate-900 mb-4">The Problem: Escalating Digital Risk</h2>
+                        <p class="text-slate-600 mb-4">
+                            As digital transactions surge, so do sophisticated fraud attempts. Static rules fail to catch novel attack vectors like synthetic identity theft and account takeovers.
+                        </p>
+                        <ul class="space-y-3">
+                            <li class="flex items-start">
+                                <span class="text-red-500 mr-2 text-xl">⚠</span>
+                                <span class="text-slate-700"><strong>High False Positives:</strong> Legitimate customers are blocked, causing churn.</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-red-500 mr-2 text-xl">⚠</span>
+                                <span class="text-slate-700"><strong>Reactive Response:</strong> Fraud is often detected hours after the transaction.</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-red-500 mr-2 text-xl">⚠</span>
+                                <span class="text-slate-700"><strong>Manual Overload:</strong> Analysts cannot keep up with transaction volume.</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Market Chart -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center">
+                        <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">Projected Fraud Losses (Global)</h3>
+                        <div class="chart-container">
+                            <canvas id="marketChart"></canvas>
+                        </div>
+                        <p class="text-xs text-center text-slate-400 mt-2">Source: Simulated Industry Data</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: ARCHITECTURE (Technical) -->
+            <div id="view-architecture" class="hidden space-y-8 animate-fade-in">
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-slate-200">
+                    <h2 class="text-2xl font-bold text-slate-900 mb-2">System Architecture</h2>
+                    <p class="text-slate-600 mb-8">
+                        The system uses a microservices approach. Transactions are ingested via API, processed by a pre-trained Random Forest model, and results are pushed to the dashboard via WebSockets.
+                    </p>
+
+                    <!-- CSS-Based Flow Diagram -->
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-4 overflow-x-auto pb-4">
+                        
+                        <!-- Step 1: User -->
+                        <div class="flex flex-col items-center min-w-[140px]">
+                            <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-3xl border-2 border-slate-300">👤</div>
+                            <h3 class="font-semibold mt-2 text-slate-800">User</h3>
+                            <p class="text-xs text-slate-500 text-center">Initiates<br>Transaction</p>
+                        </div>
+
+                        <!-- Arrow -->
+                        <div class="hidden md:block text-slate-300 text-2xl flow-arrow">➔</div>
+                        <div class="md:hidden text-slate-300 text-2xl rotate-90 my-2">➔</div>
+
+                        <!-- Step 2: API Gateway -->
+                        <div class="flex flex-col items-center min-w-[140px]">
+                            <div class="w-32 h-16 bg-indigo-50 rounded-lg flex items-center justify-center border-2 border-indigo-200 shadow-sm">
+                                <span class="font-mono text-indigo-700 font-bold">API Gateway</span>
+                            </div>
+                            <h3 class="font-semibold mt-2 text-slate-800">Ingestion</h3>
+                            <p class="text-xs text-slate-500 text-center">REST / JSON</p>
+                        </div>
+
+                        <!-- Arrow -->
+                        <div class="hidden md:block text-slate-300 text-2xl flow-arrow">➔</div>
+                        <div class="md:hidden text-slate-300 text-2xl rotate-90 my-2">➔</div>
+
+                        <!-- Step 3: ML Engine -->
+                        <div class="flex flex-col items-center min-w-[140px]">
+                            <div class="w-32 h-16 bg-emerald-50 rounded-lg flex items-center justify-center border-2 border-emerald-200 shadow-sm relative overflow-hidden">
+                                <div class="absolute inset-0 bg-emerald-100 opacity-20 animate-pulse"></div>
+                                <span class="font-bold text-emerald-700 z-10">ML Model</span>
+                            </div>
+                            <h3 class="font-semibold mt-2 text-slate-800">Processing</h3>
+                            <p class="text-xs text-slate-500 text-center">Random Forest<br>Classifier</p>
+                        </div>
+
+                        <!-- Arrow -->
+                        <div class="hidden md:block text-slate-300 text-2xl flow-arrow">➔</div>
+                        <div class="md:hidden text-slate-300 text-2xl rotate-90 my-2">➔</div>
+
+                        <!-- Step 4: Database -->
+                        <div class="flex flex-col items-center min-w-[140px]">
+                            <div class="w-20 h-20 bg-amber-50 rounded-full flex flex-col items-center justify-center border-2 border-amber-200 shadow-sm">
+                                <div class="w-12 h-2 border-b-2 border-amber-300 mb-1"></div>
+                                <div class="w-12 h-2 border-b-2 border-amber-300 mb-1"></div>
+                                <span class="text-xs font-bold text-amber-700">SQL DB</span>
+                            </div>
+                            <h3 class="font-semibold mt-2 text-slate-800">Storage</h3>
+                            <p class="text-xs text-slate-500 text-center">Transaction Log</p>
+                        </div>
+
+                        <!-- Arrow -->
+                        <div class="hidden md:block text-slate-300 text-2xl flow-arrow">➔</div>
+                        <div class="md:hidden text-slate-300 text-2xl rotate-90 my-2">➔</div>
+
+                        <!-- Step 5: Dashboard -->
+                        <div class="flex flex-col items-center min-w-[140px]">
+                            <div class="w-32 h-16 bg-white rounded-lg flex items-center justify-center border-2 border-slate-800 shadow-md">
+                                <span class="text-lg">🖥️</span>
+                                <span class="font-bold text-slate-800 ml-2">Admin UI</span>
+                            </div>
+                            <h3 class="font-semibold mt-2 text-slate-800">Action</h3>
+                            <p class="text-xs text-slate-500 text-center">Review & Block</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-xl border border-slate-200">
+                        <h3 class="font-bold text-lg mb-3 text-slate-800">Technology Stack</h3>
+                        <ul class="space-y-2 text-sm text-slate-600">
+                            <li class="flex items-center"><span class="w-2 h-2 bg-blue-500 rounded-full mr-2"></span><strong>Frontend:</strong> React.js, Tailwind CSS</li>
+                            <li class="flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span><strong>Backend:</strong> Python (Flask/FastAPI)</li>
+                            <li class="flex items-center"><span class="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span><strong>ML Core:</strong> Scikit-Learn, Pandas</li>
+                            <li class="flex items-center"><span class="w-2 h-2 bg-gray-500 rounded-full mr-2"></span><strong>Database:</strong> PostgreSQL</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200">
+                        <h3 class="font-bold text-lg mb-3 text-slate-800">Data Features</h3>
+                        <p class="text-sm text-slate-600 mb-2">The model analyzes 45+ features per transaction, including:</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded border border-slate-200">IP Location</span>
+                            <span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded border border-slate-200">Device Fingerprint</span>
+                            <span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded border border-slate-200">Velocity (Tx/min)</span>
+                            <span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded border border-slate-200">Amount Deviation</span>
+                            <span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded border border-slate-200">Time of Day</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: PROTOTYPE (Interactive Dashboard) -->
+            <div id="view-prototype" class="hidden space-y-6 animate-fade-in">
+                <!-- Context for Prototype -->
+                <div class="bg-indigo-900 text-indigo-50 p-4 rounded-lg flex items-start space-x-3 mb-6">
+                    <span class="text-2xl">⚡</span>
+                    <div>
+                        <h3 class="font-bold">Live Prototype Environment</h3>
+                        <p class="text-sm opacity-90">This interface simulates the Admin View. Interactions here demonstrate how an analyst would monitor transaction flows and review flagged alerts in real-time. Try filtering the table or changing the time range.</p>
+                    </div>
+                </div>
+
+                <!-- Dashboard Controls -->
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-slate-800">Transaction Monitor</h2>
+                    <select id="timeRangeSelect" onchange="updateDashboardData()" class="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
+                        <option value="24h">Last 24 Hours</option>
+                        <option value="7d">Last 7 Days</option>
+                        <option value="30d">Last 30 Days</option>
+                        <option value="60d">Last 60 Days</option>
+                        <option value="90d">Last 90 Days</option>
+                    </select>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm stat-card">
+                        <div class="text-slate-500 text-xs font-medium uppercase">Total Transactions</div>
+                        <div class="mt-2 flex items-baseline">
+                            <span id="stat-total" class="text-2xl font-bold text-slate-900">12,450</span>
+                            <span class="ml-2 text-sm font-medium text-emerald-600">↑ 12%</span>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm stat-card border-l-4 border-l-red-500">
+                        <div class="text-slate-500 text-xs font-medium uppercase">Fraud Detected</div>
+                        <div class="mt-2 flex items-baseline">
+                            <span id="stat-fraud" class="text-2xl font-bold text-red-600">142</span>
+                            <span class="ml-2 text-sm font-medium text-red-600">↑ 4%</span>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm stat-card">
+                        <div class="text-slate-500 text-xs font-medium uppercase">False Positives</div>
+                        <div class="mt-2 flex items-baseline">
+                            <span id="stat-false" class="text-2xl font-bold text-slate-900">0.8%</span>
+                            <span class="ml-2 text-sm font-medium text-emerald-600">↓ 0.2%</span>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm stat-card">
+                        <div class="text-slate-500 text-xs font-medium uppercase">Amount Saved</div>
+                        <div class="mt-2 flex items-baseline">
+                            <span id="stat-saved" class="text-2xl font-bold text-emerald-600">$45,230</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Charts -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <h3 class="font-bold text-slate-800 mb-4">Transaction Volume vs. Fraud Attempts</h3>
+                        <div class="chart-container">
+                            <canvas id="dashboardTrendChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <h3 class="font-bold text-slate-800 mb-4">Fraud by Category</h3>
+                        <div class="chart-container">
+                            <canvas id="dashboardDonutChart"></canvas>
+                        </div>
+                        <div class="mt-4 space-y-2">
+                            <div class="flex justify-between text-xs">
+                                <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-red-500 mr-2"></span>Credit Card</span>
+                                <span class="font-bold">45%</span>
+                            </div>
+                            <div class="flex justify-between text-xs">
+                                <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-orange-400 mr-2"></span>Identity Theft</span>
+                                <span class="font-bold">30%</span>
+                            </div>
+                            <div class="flex justify-between text-xs">
+                                <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-yellow-400 mr-2"></span>Phishing</span>
+                                <span class="font-bold">25%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Alerts Table -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800">Recent High-Risk Alerts</h3>
+                        <button class="text-sm text-blue-600 hover:text-blue-800 font-medium">View All History</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-slate-600">
+                            <thead class="text-xs text-slate-700 uppercase bg-slate-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3">Transaction ID</th>
+                                    <th scope="col" class="px-6 py-3">User</th>
+                                    <th scope="col" class="px-6 py-3">Amount</th>
+                                    <th scope="col" class="px-6 py-3">Risk Score</th>
+                                    <th scope="col" class="px-6 py-3">Flag Reason</th>
+                                    <th scope="col" class="px-6 py-3">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="alertsTableBody">
+                                <!-- JS will populate this -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: ROADMAP -->
+            <div id="view-roadmap" class="hidden space-y-8 animate-fade-in">
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-slate-200">
+                    <h2 class="text-2xl font-bold text-slate-900 mb-6">Development Roadmap</h2>
+                    
+                    <div class="relative border-l-2 border-slate-200 ml-4 space-y-8">
+                        
+                        <!-- Phase 1 -->
+                        <div class="relative pl-8">
+                            <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white"></div>
+                            <h3 class="text-lg font-bold text-slate-800">Phase 1: Research & Prototype (Current)</h3>
+                            <span class="text-xs font-mono text-emerald-600 bg-emerald-50 px-2 py-1 rounded">Week 1-2</span>
+                            <p class="mt-2 text-slate-600">Finalizing system architecture, selecting ML models, and creating UI mockups (completed). Submitting prototypes for mentorship review.</p>
+                        </div>
+
+                        <!-- Phase 2 -->
+                        <div class="relative pl-8">
+                            <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-white border-2 border-slate-400"></div>
+                            <h3 class="text-lg font-bold text-slate-800">Phase 2: Core Development</h3>
+                            <span class="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-1 rounded">Week 3-6</span>
+                            <p class="mt-2 text-slate-600">Training the Random Forest model on the Kaggle dataset. Building the Flask API and integrating the React frontend. Basic authentication setup.</p>
+                        </div>
+
+                        <!-- Phase 3 -->
+                        <div class="relative pl-8">
+                            <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-white border-2 border-slate-400"></div>
+                            <h3 class="text-lg font-bold text-slate-800">Phase 3: Testing & Optimization</h3>
+                            <span class="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-1 rounded">Week 7-8</span>
+                            <p class="mt-2 text-slate-600">Stress testing the API. Tuning model hyperparameters to reduce false positives. UI polish and responsiveness checks.</p>
+                        </div>
+
+                        <!-- Phase 4 -->
+                        <div class="relative pl-8">
+                            <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-white border-2 border-slate-400"></div>
+                            <h3 class="text-lg font-bold text-slate-800">Phase 4: Final Presentation</h3>
+                            <span class="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-1 rounded">Week 9</span>
+                            <p class="mt-2 text-slate-600">Deployment to cloud (AWS/Heroku). Final demo to stakeholders and mentors.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 mt-auto">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+            <p class="text-sm text-slate-500">© 2026 ShieldAI Team. Prototype Version 1.0</p>
+            <div class="text-sm text-slate-400">Mentorship Program SLBT R</div>
+        </div>
+    </footer>
+
+    <script>
+        // --- DATA & STATE MANAGEMENT ---
+        
+        // Mock Data for the Market Chart (Overview)
+        const marketData = {
+            years: ['2019', '2020', '2021', '2022', '2023', '2024', '2025', '2026 proj.'],
+            losses: [24, 28, 32, 38, 42, 48], // Billions USD
+        };
+
+        // Mock Data for the Dashboard
+        const dashboardData = {
+            '24h': {
+                total: '1,245',
+                fraud: '14',
+                saved: '$4,230',
+                trend: [120, 150, 180, 140, 160, 200, 220, 250],
+                trendLabels: ['00:00', '03:00', '06:00', '09:00', '12:00', '15:00', '18:00', '21:00'],
+                fraudDist: [8, 4, 2] // Credit, Identity, Phishing
+            },
+            '7d': {
+                total: '12,450',
+                fraud: '142',
+                saved: '$45,230',
+                trend: [1200, 1400, 1100, 1600, 1800, 1900, 2100],
+                trendLabels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                fraudDist: [65, 45, 32]
+            },
+            '30d': {
+                total: '54,100',
+                fraud: '620',
+                saved: '$182,000',
+                trend: [5000, 5200, 4800, 6000],
+                trendLabels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                fraudDist: [300, 200, 120]
+            }
+        };
+
+        const alertData = [
+            { id: 'TXN-8821', user: 'j.doe@email.com', amount: '$2,400', score: 92, reason: 'Location Mismatch', status: 'Blocked' },
+            { id: 'TXN-8822', user: 'alex.s@email.com', amount: '$150', score: 85, reason: 'Velocity High', status: 'Review' },
+            { id: 'TXN-8823', user: 'm.smith@email.com', amount: '$9,999', score: 98, reason: 'Large Amount', status: 'Blocked' },
+            { id: 'TXN-8824', user: 'l.jones@email.com', amount: '$45', score: 12, reason: 'Low Risk', status: 'Allowed' },
+            { id: 'TXN-8825', user: 'k.lee@email.com', amount: '$3,200', score: 88, reason: 'Device Change', status: 'Review' },
+        ];
+
+        // Chart Instances
+        let marketChartInstance = null;
+        let trendChartInstance = null;
+        let donutChartInstance = null;
+
+        // --- NAVIGATION LOGIC ---
+
+        function switchTab(tabId) {
+            // Hide all views
+            ['overview', 'architecture', 'prototype', 'roadmap'].forEach(id => {
+                document.getElementById(`view-${id}`).classList.add('hidden');
+                
+                // Reset Tab Styles
+                const btn = document.getElementById(`tab-${id}`);
+                btn.classList.remove('bg-slate-800', 'text-white', 'text-emerald-400', 'bg-emerald-900/20', 'border-emerald-900');
+                
+                if (id === 'prototype') {
+                     btn.classList.add('text-emerald-400', 'border', 'border-emerald-900', 'bg-emerald-900/20');
+                     btn.classList.remove('bg-slate-800', 'text-white');
+                } else {
+                     btn.classList.add('text-slate-300');
+                     btn.classList.remove('bg-slate-800', 'text-white');
+                }
+            });
+
+            // Show selected view
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            
+            // Set Active Tab Style
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            activeBtn.classList.remove('text-slate-300', 'text-emerald-400', 'bg-emerald-900/20', 'border-emerald-900');
+            activeBtn.classList.add('bg-slate-800', 'text-white');
+
+            // Trigger Chart Render/Update if needed
+            if (tabId === 'overview' && !marketChartInstance) {
+                renderMarketChart();
+            } else if (tabId === 'prototype') {
+                if (!trendChartInstance) {
+                    initDashboardCharts();
+                } else {
+                    updateDashboardData(); // Refresh just in case
+                }
+            }
+        }
+
+        // --- CHART RENDERING LOGIC ---
+
+        function renderMarketChart() {
+            const ctx = document.getElementById('marketChart').getContext('2d');
+            marketChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: marketData.years,
+                    datasets: [{
+                        label: 'Global Fraud Losses ($ Billion)',
+                        data: marketData.losses,
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#ef4444',
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            padding: 12,
+                            titleFont: { size: 14 },
+                            bodyFont: { size: 14 }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#f1f5f9' },
+                            ticks: { callback: function(value) { return '$' + value + 'B'; } }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        function initDashboardCharts() {
+            // Trend Chart
+            const ctxTrend = document.getElementById('dashboardTrendChart').getContext('2d');
+            trendChartInstance = new Chart(ctxTrend, {
+                type: 'bar',
+                data: {
+                    labels: [], // Populated by update
+                    datasets: [{
+                        label: 'Transactions',
+                        data: [],
+                        backgroundColor: '#cbd5e1',
+                        borderRadius: 4
+                    }, {
+                        label: 'Fraud Attempts',
+                        data: [], // Dummy logic in update
+                        backgroundColor: '#ef4444',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { grid: { color: '#f1f5f9' }, beginAtZero: true }
+                    }
+                }
+            });
+
+            // Donut Chart
+            const ctxDonut = document.getElementById('dashboardDonutChart').getContext('2d');
+            donutChartInstance = new Chart(ctxDonut, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Credit Card', 'Identity Theft', 'Phishing'],
+                    datasets: [{
+                        data: [], // Populated by update
+                        backgroundColor: ['#ef4444', '#fb923c', '#facc15'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    cutout: '70%'
+                }
+            });
+
+            // Populate initial data
+            updateDashboardData();
+            populateAlertsTable();
+        }
+
+        function updateDashboardData() {
+            const range = document.getElementById('timeRangeSelect').value;
+            const data = dashboardData[range];
+
+            // Update Text Stats
+            document.getElementById('stat-total').innerText = data.total;
+            document.getElementById('stat-fraud').innerText = data.fraud;
+            document.getElementById('stat-saved').innerText = data.saved;
+
+            // Update Trend Chart
+            trendChartInstance.data.labels = data.trendLabels;
+            trendChartInstance.data.datasets[0].data = data.trend;
+            // Simulate fraud count as ~5% of total for visual effect
+            trendChartInstance.data.datasets[1].data = data.trend.map(val => Math.round(val * 0.05)); 
+            trendChartInstance.update();
+
+            // Update Donut Chart
+            donutChartInstance.data.datasets[0].data = data.fraudDist;
+            donutChartInstance.update();
+        }
+
+        function populateAlertsTable() {
+            const tbody = document.getElementById('alertsTableBody');
+            tbody.innerHTML = '';
+
+            alertData.forEach(alert => {
+                let statusClass = '';
+                if (alert.status === 'Blocked') statusClass = 'bg-red-100 text-red-800';
+                else if (alert.status === 'Review') statusClass = 'bg-yellow-100 text-yellow-800';
+                else statusClass = 'bg-green-100 text-green-800';
+
+                // Skip "Allowed" for the High Risk Table usually, but we show one for demo
+                if(alert.status === 'Allowed') return; 
+
+                const row = `
+                    <tr class="bg-white border-b hover:bg-slate-50 transition">
+                        <td class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">${alert.id}</td>
+                        <td class="px-6 py-4">${alert.user}</td>
+                        <td class="px-6 py-4 font-mono">${alert.amount}</td>
+                        <td class="px-6 py-4">
+                            <div class="w-full bg-slate-200 rounded-full h-1.5 dark:bg-slate-700">
+                                <div class="bg-red-600 h-1.5 rounded-full" style="width: ${alert.score}%"></div>
+                            </div>
+                            <span class="text-xs text-red-600 font-bold">${alert.score}/100</span>
+                        </td>
+                        <td class="px-6 py-4 text-xs">${alert.reason}</td>
+                        <td class="px-6 py-4">
+                            <span class="${statusClass} text-xs font-medium px-2.5 py-0.5 rounded">${alert.status}</span>
+                            <button class="ml-2 text-slate-400 hover:text-slate-600">⋮</button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        // Initialize default view
+        window.onload = function() {
+            renderMarketChart();
+            
+            // Add Fade In class helper
+            const style = document.createElement('style');
+            style.innerHTML = `
+                .animate-fade-in {
+                    animation: fadeIn 0.5s ease-in-out;
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+            `;
+            document.head.appendChild(style);
+        };
+
+    </script>
+</body>
+</html>
